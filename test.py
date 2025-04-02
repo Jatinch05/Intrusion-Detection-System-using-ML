@@ -175,10 +175,6 @@ def processing_worker():
             print("Error in processing worker:", e)
 
 
-def packet_callback(packet):
-    features = extract_features(packet)
-    packet_queue.put(features)
-
 def main():
     print("Starting single packet capture loop... (Press CTRL+C to stop)")
     while True:
