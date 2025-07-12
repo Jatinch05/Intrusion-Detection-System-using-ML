@@ -436,7 +436,7 @@ def main():
     try:
         while True:
             # Capture packets
-            packets = sniff(count=5, timeout=5, iface="\\Device\\NPF_{40F77AED-8335-4A8E-875E-9C20C3085651}")
+            packets = sniff(count=5, timeout=5, iface="\\Device\\NPF_Loopback")
 
             
             if packets:
