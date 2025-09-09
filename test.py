@@ -310,28 +310,23 @@ def calculate_host_based_features(dst_ip, service, src_port):
 
 def extract_comprehensive_features(packet):
     """Extract all features from a packet with connection tracking"""
-    # Extract basic features
+    
     basic_features, src_ip, dst_ip, src_port, dst_port = extract_basic_features(packet)
     
-    if not src_ip:  # Skip if no IP layer
+    if not src_ip:          
         return None
     
-    # Calculate duration (for now, set to 0 for single packets)
     duration = 0
     
-    # Extract service and protocol
     service = basic_features['service']
     protocol = basic_features['protocol_type']
     
-    # Calculate statistical features
     statistical_features = calculate_statistical_features(
         src_ip, dst_ip, src_port, dst_port, service, protocol
     )
     
-    # Calculate host-based features
     host_features = calculate_host_based_features(dst_ip, service, src_port)
     
-    # Record this connection
     connection_record = {
         'timestamp': time.time(),
         'src_ip': src_ip,
@@ -344,7 +339,6 @@ def extract_comprehensive_features(packet):
     }
     connection_history.append(connection_record)
     
-    # Combine all features
     features = {
         'duration': duration,
         'protocol_type': protocol,
@@ -355,19 +349,19 @@ def extract_comprehensive_features(packet):
         'land': basic_features['land'],
         'wrong_fragment': basic_features['wrong_fragment'],
         'urgent': basic_features['urgent'],
-        'hot': 0,  # Requires content inspection
-        'num_failed_logins': 0,  # Requires application layer analysis
-        'logged_in': 0,  # Requires application layer analysis
-        'num_compromised': 0,  # Requires application layer analysis
-        'root_shell': 0,  # Requires application layer analysis
-        'su_attempted': 0,  # Requires application layer analysis
-        'num_root': 0,  # Requires application layer analysis
-        'num_file_creations': 0,  # Requires application layer analysis
-        'num_shells': 0,  # Requires application layer analysis
-        'num_access_files': 0,  # Requires application layer analysis
-        'num_outbound_cmds': 0,  # Requires application layer analysis
-        'is_host_login': 0,  # Requires application layer analysis
-        'is_guest_login': 0,  # Requires application layer analysis
+        'hot': 0,  
+        'num_failed_logins': 0,  
+        'logged_in': 0,  
+        'num_compromised': 0,  
+        'root_shell': 0,  
+        'su_attempted': 0,  
+        'num_root': 0,  
+        'num_file_creations': 0,  
+        'num_shells': 0,  
+        'num_access_files': 0,  
+        'num_outbound_cmds': 0,  
+        'is_host_login': 0,  
+        'is_guest_login': 0,  
         **statistical_features,
         **host_features
     }
